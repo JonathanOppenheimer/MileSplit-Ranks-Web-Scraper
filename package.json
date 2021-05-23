@@ -1,0 +1,16 @@
+{
+  "name": "MileSplit-Ranks-Web-Scraper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "gatherBasicInfo.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Jonathan Oppenheimer",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.9",
+    "got": "^10.7.0"
+  }
+}
