@@ -11,6 +11,8 @@ A lightweight node.js web scraper to acquire, and then format the ranked list of
 ## Explanation of Function 
 If you've ever run XC or T&F at a non-professional level, your results were probably posted to [MileSplit](https://www.milesplit.com/), the "premier network for track & field and cross country." Essentially, they host all the results of various races and meets throughout the United States and publish them in a navigable format with specific meet results, results by athlete, results by event, and so on, available. Unfortunately, a good deal of use of MileSplit requires a paid subscription to MileSplit. 
 
+![having to pay image](readme/paying.png)
+
 This scraper aims to provide a similarily readable ranked list of athletes by gender/region/event without a subscription to MileSplit. These lists ican be helpful when determining advancement to future meets or if you're just curious! 
 
 ## Installation and Use
