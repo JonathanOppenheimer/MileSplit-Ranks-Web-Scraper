@@ -13,7 +13,6 @@ let finalTimesArray = [
 let gender = genderAndEvent[0];
 let event = genderAndEvent[1];
 
-
 let times = [];
 let names = [];
 
@@ -54,41 +53,50 @@ function formatArays() {
 }
 
 function fillNamesAndTimes() {
-    for (i in meetURLS) {
+    for (let i = 0; i < meetURLS.length; i++) {
         //Need to wait until this function completes before doing again.
         //Annoying af
-        getNamesAndTimes(meetURLS[i], racePlacements[i])
+        getNamesAndTimes(meetURLS[i], racePlacements[i], function () {
+            console.log(i + " Done");
+        });
     }
 }
 
-function getNamesAndTimes(meetURL, racePlacement) {
+function getNamesAndTimes(meetURL, racePlacement, callback) {
     got(meetURL).then(response => {
+        let name = '';
+        let time = '';
         const $ = cheerio.load(response.body);
         $('#page').each(function (i) {
-            var text = $(this).text().trim();
-            var position1 = text.search(gender + ' ' + event);
-            text = text.slice(position1, -1);
-            var position2 = text.indexOf(gender, text.indexOf(gender) + 1);
-            text = text.slice(0, position2);
-            text = text.split('\n')
-            text = text[parseInt(racePlacement) + 3];
-            text = text.trim();
-            text = text.replace(/ +(?= )/g, '');
-            text = text.split(' ');
-            let name = text[1] + ' ' + text[2];
-            names.push(name);
-            let time = text[5];
-            if (isNaN(parseInt(time)) == true || parseInt(time) < 9) {
-               time = 'Unknown'
+            try {
+                var text = $(this).text().trim();
+                var position1 = text.search(gender + ' ' + event);
+                text = text.slice(position1, -1);
+                var position2 = text.indexOf(gender, text.indexOf(gender) + 1);
+                text = text.slice(0, position2);
+                text = text.split('\n')
+                text = text[parseInt(racePlacement) + 3];
+                text = text.trim();
+                text = text.replace(/ +(?= )/g, '');
+                text = text.split(' ');
+                name = text[1] + ' ' + text[2];
+
+                time = text[5];
+                if (isNaN(parseInt(time)) == true || parseInt(time) < 9) {
+                    time = 'Unknown'
+                }
+                else {
+                    time = time;
+                }
             }
-            else {
-                time = time;
+            catch {
+                time = 'Unknown';
+                name = 'Unknown';
             }
             times.push(time);
-            console.table(times);
-            console.table(names);
+            names.push(name);
+            callback();
         });
     });
-    console.log(meetURL);
-    console.log(racePlacement);
 }
+
