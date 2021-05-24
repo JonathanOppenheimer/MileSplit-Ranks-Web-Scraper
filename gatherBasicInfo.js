@@ -4,36 +4,83 @@ const got = require('got');
 //Change to rank list you're trying to scrape. Please ensure the event is in the proper format (e.g. "/100m?year")
 const raceURL = 'https://va.milesplit.com/rankings/pro/high-school-boys/outdoor-track-and-field/100m?year=2021&accuracy=fat&league=6459';
 
-//Finds gender and event
-let gender = "alien";
-let race = "moonwalk";
-
+//Variables for gender and race type
+let gender = "Unknown";
+let eventType = "Unknown";
 
 //Sets up arrays for use
 let times = [
     ['Rank', 'Name', 'School', 'Times', 'Meet']
 ];
 let meetURLS = [];
+let goodMeetURLS = [];
 let racePlacements = [];
 
+//Run functions area
+//-------------------------------------------//
+
 getRaceDetails();
-printTable();
-
-//-------------------------------------------//
-function getRaceDetails() {
-    //Sees if it's a boys or girls race 
-    if (raceURL.search("boys") > 0) {
-        gender = "Boys"
-    }
-    else {
-        gender = "Girls"
-    }
-    //Get the event type
-
+if (eventType != "Unknown" && gender != "Unknown") {
+    printTable();
 }
-//-------------------------------------------//
+else {
+    console.log("Sorry this link isn't quite right...");
+}
 
 //Main work done below
+//-------------------------------------------//
+function getRaceDetails() {
+    //Sees if it's a boys, girls, men or women's race 
+    if (raceURL.search("boys") > 0) {
+        gender = "Boys";
+    }
+    else if (raceURL.search("men")) {
+        gender = "Men";
+    }
+    else if (raceURL.search("girls")) {
+        gender = "Girls";
+    }
+    else {
+        gender = "Women";
+    }
+    //Get the event type
+    eventType = raceURL;
+    //Index of last slash
+    let sPosition = eventType.lastIndexOf("/");
+    //Index of year (?year=2021)
+    let qPosition = eventType.search("year");
+    eventType = eventType.slice(sPosition + 1, qPosition - 1);
+    //Format event type correctly for different races
+    if (eventType.search("m") > -1) {
+        eventType = eventType.slice(0, -1);
+        eventType = eventType + " Meter"
+    }
+    else if (eventType.search("55h") > -1 || eventType.search("100h") > -1 || eventType.search("110h") > -1 || eventType.search("300h") > -1) {
+        eventType = eventType.slice(0, -1);
+        eventType = eventType + " Meter Hurdles"
+    }
+    else if (eventType.search("s") > -1) {
+        eventType = "Shot Put";
+    }
+    else if (eventType.search("d") > -1) {
+        eventType = "Discus";
+    }
+    else if (eventType === "hj") {
+        eventType = "High Jump";
+    }
+    else if (eventType === "lj") {
+        eventType = "Long Jump";
+    }
+    else if (eventType === "tj") {
+        eventType = "Triple Jump";
+    }
+    else if (eventType === "pv") {
+        eventType = "Pole Vault";
+    }
+    else {
+        eventType = "Unknown"
+    }
+}
 
 //Gets the placements (usually 1-50) of the runners and inserts them into the array
 //Also fills the times and names of the runners, which are unknown for now 
@@ -102,54 +149,54 @@ function getRacePlacement(callback) {
     });
 }
 
+//Changes the URL of the meet to a readable one
+function changeURL() {
+    for (i = 0; i < meetURLS.length; i++) {
+        got(meetURLS[i]).then(response => {
+            const $ = cheerio.load(response.body);
+            let good_url = "";
+            if (response.body.search('class="meetResultsList"') > -1) {
+                good_url = $('.meetResultsList').find('a').attr('href');
+                good_url = good_url.replace('auto', 'raw');
+            }
+            else {
+                good_url = $('#ddResultsView').find('option').attr('value');
+                good_url = good_url.replace('formatted', 'raw');
+            }
+        }).catch(err => {
+            console.log(err);
+        });
+    }
+}
+
 //Prints the table after running the functions in reverse order
 function printTable() {
     //Runs third
     getRacePlacement(() => {
         //Runs second
         getMeetName(() => {
-            //Runs first
+            //Runs first          
             getOverallRankAndFillBlank(() => {
                 //Runs last
                 console.table(times);
-                console.table(meetURLS);
-                console.table(racePlacements);
+                console.table(goodMeetURLS);
             });
         });
     });
 }
-
 /*
 
-//Code to fill meet names 
-
-function fill_meet_name() {
-    times[0][4] = "Meet";
-    times[50][4] = "Blank";
-    for (const i in meet_urls) {
-        got(meet_urls[i]).then(response => {
+for (const i in meetURLS) {
+        got(meetURLS[i]).then(response => {
             const $ = cheerio.load(response.body);
             let text = $('.meetName').text().trim();
             times[i][4] = text;
-            console.table(times);
-        });
-    }
-}
-
-
-//Changes unusable meet URLS to usable URLS 
-function make_good_urls() {
-    for (i = 0; i < meet_urls.length; i++) {
-        got(meet_urls[i]).then(response => {
-            const $ = cheerio.load(response.body);
-            let good_url = $('#ddResultsView').children().attr('').value;
-            good_url = good_url.replace('formatted', 'raw');
-           
+            console.log(text);
         }).catch(err => {
             console.log(err);
+            callback();
         });
     }
-}
 
 Returns the line with the athlete's time (puts meet URL and placement together )
 got(section1).then(response => {
