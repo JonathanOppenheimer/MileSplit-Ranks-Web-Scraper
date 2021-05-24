@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const got = require('got');
+const fs = require('fs');
 
 //Change to rank list you're trying to scrape. Please ensure the event is in the proper format (e.g. "/100m?year")
 const raceURL = 'https://va.milesplit.com/rankings/pro/high-school-boys/outdoor-track-and-field/100m?year=2021&accuracy=fat&league=6459';
@@ -10,11 +11,12 @@ let eventType = "Unknown";
 
 //Sets up arrays for use
 let times = [
-    ['Rank', 'Name', 'School', 'Times', 'Meet']
+    ['Rank', 'Name', 'School', 'Times']
 ];
 let meetURLS = [];
 let goodMeetURLS = [];
 let racePlacements = [];
+let meetNames = [];
 
 //Run functions area
 //-------------------------------------------//
@@ -109,8 +111,8 @@ function getOverallRankAndFillBlank(callback) {
     });
 }
 
-//Fills the meet the student ran at
-function getMeetName(callback) {
+//Gets the incomplete URL and pushes it to a seperate array
+function getMeetURL(callback) {
     got(raceURL).then(response => {
         const $ = cheerio.load(response.body);
         //Get the meet links and push to a seperate array
@@ -149,6 +151,20 @@ function getRacePlacement(callback) {
     });
 }
 
+//Adds the name of the meet a student ran in
+function getMeetName() {
+    for (i in meetURLS) {
+        got(meetURLS[i]).then(response => {
+            const $ = cheerio.load(response.body);
+            let text = $('.meetName').text().trim();
+            meetNames.push(text);
+            exportToJSON("json-output/meetNames.json", meetNames);
+        }).catch(err => {
+            console.log(err);
+        });
+    }
+}
+
 //Changes the URL of the meet to a readable one
 function changeURL() {
     for (i = 0; i < meetURLS.length; i++) {
@@ -163,10 +179,19 @@ function changeURL() {
                 good_url = $('#ddResultsView').find('option').attr('value');
                 good_url = good_url.replace('formatted', 'raw');
             }
+            goodMeetURLS.push(good_url);
+            exportToJSON("json-output/goodMeetURLs.json", goodMeetURLS);
         }).catch(err => {
             console.log(err);
         });
     }
+}
+
+function exportToJSON(location, array) {
+    fs.writeFile(location, JSON.stringify(array), function (err) {
+        if (err) throw err;
+    }
+    );
 }
 
 //Prints the table after running the functions in reverse order
@@ -174,42 +199,15 @@ function printTable() {
     //Runs third
     getRacePlacement(() => {
         //Runs second
-        getMeetName(() => {
-            //Runs first          
+        getMeetURL(() => {
+            //Runs first   
+            changeURL();
+            getMeetName();
             getOverallRankAndFillBlank(() => {
                 //Runs last
+                exportToJSON("json-output/basic.json", times);
                 console.table(times);
-                console.table(goodMeetURLS);
             });
         });
     });
 }
-/*
-
-for (const i in meetURLS) {
-        got(meetURLS[i]).then(response => {
-            const $ = cheerio.load(response.body);
-            let text = $('.meetName').text().trim();
-            times[i][4] = text;
-            console.log(text);
-        }).catch(err => {
-            console.log(err);
-            callback();
-        });
-    }
-
-Returns the line with the athlete's time (puts meet URL and placement together )
-got(section1).then(response => {
-    const $ = cheerio.load(response.body);
-    $('#page').each(function (i) {
-        var text = $(this).text().trim();
-        var position1 = text.search('Boys 100 Meter');
-        text = text.slice(position1, -1);
-        var position2 =  text.indexOf("Boys", text.indexOf("Boys") + 1);
-        text = text.slice(0, position2);
-        text = text.split('\n')
-        //at this point choose place + 4 for the line with the time and athlete
-
-    });
-});
-*/
