@@ -17,12 +17,15 @@ let meetURLS = [];
 let goodMeetURLS = [];
 let racePlacements = [];
 let meetNames = [];
+let genderAndEvent = [];
 
 //Run functions area
 //-------------------------------------------//
 
 getRaceDetails();
 if (eventType != "Unknown" && gender != "Unknown") {
+    genderAndEvent.push(gender);
+    genderAndEvent.push(eventType);
     printTable();
 }
 else {
@@ -31,6 +34,7 @@ else {
 
 //Main work done below
 //-------------------------------------------//
+
 function getRaceDetails() {
     //Sees if it's a boys, girls, men or women's race 
     if (raceURL.search("boys") > 0) {
@@ -206,6 +210,8 @@ function printTable() {
             getOverallRankAndFillBlank(() => {
                 //Runs last
                 exportToJSON("json-output/basic.json", times);
+                exportToJSON("json-output/racePlacements.json", racePlacements);
+                exportToJSON("json-output/genderAndEvent.json", genderAndEvent);
                 console.table(times);
             });
         });
