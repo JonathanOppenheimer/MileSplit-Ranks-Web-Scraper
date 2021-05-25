@@ -2,7 +2,6 @@ const cheerio = require('cheerio');
 const got = require('got');
 const basic = require('./json-output/basic.json');
 const meetURLS = require('./json-output/goodMeetURLs.json');
-const meetNames = require('./json-output/meetNames.json');
 const racePlacements = require('./json-output/racePlacements.json');
 const genderAndEvent = require('./json-output/genderAndEvent.json');
 
@@ -13,11 +12,12 @@ let finalTimesArray = [
 let gender = genderAndEvent[0];
 let event = genderAndEvent[1];
 
-let times = [];
-let names = [];
-
 //turns JSON files into array
 let basicArray = basic.map(function (item) {
+    return Object.values(item);
+});
+
+let goodMeetURLS = meetURLS.map(function (item) {
     return Object.values(item);
 });
 
@@ -25,43 +25,70 @@ let basicArray = basic.map(function (item) {
 //-------------------------------------------//
 
 formatArays();
-fillNamesAndTimes();
-console.table(meetURLS);
-console.table(racePlacements);
-
+printTables();
 
 //Main work done below
 //-------------------------------------------//
 
+function printTables() {
+    //Runs first
+    fillNamesAndTimes(() => {
+        //Runs last
+        //doesn't run for some reason (?) -- need to fix
+        console.table(goodMeetURLS);
+        console.table(racePlacements);
+        console.table(finalTimesArray);
+    });
+}
+
 function formatArays() {
-    //Moves elements around and renames certain cells
-    for (i in basicArray) {
-        finalTimesArray.splice(i, 0, basicArray[i]);
-        finalTimesArray[i][4] = meetNames[i];
-    }
+    //Formats finalTimesArray 
+    finalTimesArray = basic;
     finalTimesArray[0][1] = "Name";
     finalTimesArray[0][3] = "Time";
+    finalTimesArray.pop();
+    goodMeetURLS.sort(sortBySecondColumn);
+}
 
-    var temp = finalTimesArray.map(function (arr) {
-        return arr.slice();
-    });
-
-    for (i = 0; i < finalTimesArray.length - 1; i++) {
-        finalTimesArray[i + 1][4] = temp[i][4];
+//Sorts a 2d array by it's second column
+function sortBySecondColumn(column1, column2) {
+    if (column1[1] === column2[1]) {
+        return 0;
     }
-    finalTimesArray[0][4] = "Meet";
-    finalTimesArray.pop();
-    finalTimesArray.pop();
+    else {
+        return (column1[1] < column2[1]) ? -1 : 1;
+    }
 }
 
 function fillNamesAndTimes() {
     let counter = 0;
     for (let i = 0; i < meetURLS.length; i++) {
-        //okay our problems are decreasing we like to see it
         counter++;
-        getNamesAndTimes(meetURLS[i], racePlacements[i], counter, function () {
-            console.log(i + " Done");
+        getNamesAndTimes(goodMeetURLS[i][0], racePlacements[i], counter, function () {
+            //console.log(i + " Done");
         });
+    }
+}
+
+//Function to see if the time is valid 
+function validTime(time) {
+    //Checks if it's a string or under 9 seconds (the under 9 seconds needs to be adjusted because sometimes a time could actually be under 9 seconds if it's 55m or something) 
+    if (isNaN(parseInt(time)) == true || parseInt(time) < 9) {
+        //Sometimes the time is still valid if only the first character is a string see
+        //https://en.wikipedia.org/wiki/Athletics_abbreviations#Records
+        //Longer term need to check more than just the first character 
+        if ((/[a-zA-Z]/).test(time.charAt(0)) && time.length > 1) {
+            let testAgain = time.slice(1);
+            if (validTime(testAgain) == true) {
+                return true;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        return true;
     }
 }
 
@@ -72,6 +99,7 @@ function getNamesAndTimes(meetURL, racePlacement, position, callback) {
         const $ = cheerio.load(response.body);
         $('#page').each(function (i) {
             try {
+                //Messes with the raw text output until an array with just the person's details is created
                 var text = $(this).text().trim();
                 var position1 = text.search(gender + ' ' + event);
                 text = text.slice(position1, -1);
@@ -82,14 +110,27 @@ function getNamesAndTimes(meetURL, racePlacement, position, callback) {
                 text = text.trim();
                 text = text.replace(/ +(?= )/g, '');
                 text = text.split(' ');
+                
+                let tempArray = text;
                 name = text[1] + ' ' + text[2];
-
-                time = text[5];
-                if (isNaN(parseInt(time)) == true || parseInt(time) < 9) {
-                    time = 'Unknown'
+                //If the name has undefined in it, just make it Unknown -- can look into later
+                if (name.search('undefined') > -1) {
+                    //name = "Unknown"
                 }
-                else {
-                    time = time;
+                //Works it way backwards from the bottom of the array looking for a valid time. 
+                //This can definitly be cleaned up
+                time = tempArray[tempArray.length - 1];
+                if (validTime(time) == false) {
+                    time = tempArray[tempArray.length - 2];
+                    if (validTime(time) == false) {
+                        time = tempArray[tempArray.length - 3];
+                        if (validTime(time) == false) {
+                            time = tempArray[tempArray.length - 4];
+                            if (validTime(time) == false) {
+                                time = "Unknown";
+                            }
+                        }
+                    }
                 }
             }
             catch {
@@ -98,8 +139,7 @@ function getNamesAndTimes(meetURL, racePlacement, position, callback) {
             }
             finalTimesArray[position][1] = name;
             finalTimesArray[position][3] = time;
-            //console.log(name + " " + position); 
-            //console.log(finalTimesArray[position][1]);
+            console.table(finalTimesArray);
             callback();
         });
     });

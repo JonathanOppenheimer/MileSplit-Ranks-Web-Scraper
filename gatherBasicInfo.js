@@ -108,7 +108,9 @@ function getOverallRankAndFillBlank(callback) {
             var url = "https://va.milesplit.com" + href;
             changeURL(url, i);
         });
+
         //Adds the name of the meet a student ran in to a seperate JSON file
+        times[0][4] = "Meet";
         $('.meet a').each(function (i) {
             var text = $(this).text().trim();
             times[i + 1][4] = text;
@@ -117,7 +119,7 @@ function getOverallRankAndFillBlank(callback) {
         //Fills names and times with placeholder values
         for (i in times) {
             times[i][1] = "NameHere"
-            times[i][3] = "0.00s";
+            times[i][3] = "0.00";
         }
         callback();
     }).catch(err => {
@@ -151,22 +153,22 @@ function getRacePlacement(callback) {
 
 //Changes the URL of the meet to a readable one
 function changeURL(URL, position) {
-        got(URL).then(response => {
-            const $ = cheerio.load(response.body);
-            let good_url = "";
-            if (response.body.search('class="meetResultsList"') > -1) {
-                good_url = $('.meetResultsList').find('a').attr('href');
-                good_url = good_url.replace('auto', 'raw');
-            }
-            else {
-                good_url = $('#ddResultsView').find('option').attr('value');
-                good_url = good_url.replace('formatted', 'raw');
-            }
-            goodMeetURLS.push({good_url, position});
-            exportToJSON("json-output/goodMeetURLs.json", goodMeetURLS);
-        }).catch(err => {
-            console.log(err);
-        });
+    got(URL).then(response => {
+        const $ = cheerio.load(response.body);
+        let good_url = "";
+        if (response.body.search('class="meetResultsList"') > -1) {
+            good_url = $('.meetResultsList').find('a').attr('href');
+            good_url = good_url.replace('auto', 'raw');
+        }
+        else {
+            good_url = $('#ddResultsView').find('option').attr('value');
+            good_url = good_url.replace('formatted', 'raw');
+        }
+        goodMeetURLS.push([good_url, position]);
+        exportToJSON("json-output/goodMeetURLs.json", goodMeetURLS);
+    }).catch(err => {
+        console.log(err);
+    });
 }
 
 function exportToJSON(location, array) {
@@ -189,5 +191,4 @@ function printTable() {
             exportToJSON("json-output/genderAndEvent.json", genderAndEvent);
         });
     });
-
 }
