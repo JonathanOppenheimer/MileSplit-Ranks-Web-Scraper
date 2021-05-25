@@ -26,6 +26,8 @@ let basicArray = basic.map(function (item) {
 
 formatArays();
 fillNamesAndTimes();
+console.table(meetURLS);
+console.table(racePlacements);
 
 
 //Main work done below
@@ -53,16 +55,17 @@ function formatArays() {
 }
 
 function fillNamesAndTimes() {
+    let counter = 0;
     for (let i = 0; i < meetURLS.length; i++) {
-        //Need to wait until this function completes before doing again.
-        //Annoying af
-        getNamesAndTimes(meetURLS[i], racePlacements[i], function () {
+        //okay our problems are decreasing we like to see it
+        counter++;
+        getNamesAndTimes(meetURLS[i], racePlacements[i], counter, function () {
             console.log(i + " Done");
         });
     }
 }
 
-function getNamesAndTimes(meetURL, racePlacement, callback) {
+function getNamesAndTimes(meetURL, racePlacement, position, callback) {
     got(meetURL).then(response => {
         let name = '';
         let time = '';
@@ -93,10 +96,11 @@ function getNamesAndTimes(meetURL, racePlacement, callback) {
                 time = 'Unknown';
                 name = 'Unknown';
             }
-            times.push(time);
-            names.push(name);
+            finalTimesArray[position][1] = name;
+            finalTimesArray[position][3] = time;
+            //console.log(name + " " + position); 
+            //console.log(finalTimesArray[position][1]);
             callback();
         });
     });
 }
-

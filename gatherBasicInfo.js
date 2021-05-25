@@ -11,9 +11,8 @@ let eventType = "Unknown";
 
 //Sets up arrays for use
 let times = [
-    ['Rank', 'Name', 'School', 'Times']
+    ['Rank', 'Name', 'School', 'Times', 'Meet']
 ];
-let meetURLS = [];
 let goodMeetURLS = [];
 let racePlacements = [];
 let meetNames = [];
@@ -103,28 +102,23 @@ function getOverallRankAndFillBlank(callback) {
             var text = $(this).text().trim();
             times[i + 1][2] = text;
         });
+        //Get the meet links and push to a seperate array
+        $('.meet a').each((i, link,) => {
+            var href = link.attribs.href;
+            var url = "https://va.milesplit.com" + href;
+            changeURL(url, i);
+        });
+        //Adds the name of the meet a student ran in to a seperate JSON file
+        $('.meet a').each(function (i) {
+            var text = $(this).text().trim();
+            times[i + 1][4] = text;
+            meetNames.push(text);
+        });
         //Fills names and times with placeholder values
         for (i in times) {
             times[i][1] = "NameHere"
             times[i][3] = "0.00s";
         }
-        callback();
-    }).catch(err => {
-        console.log(err);
-        callback();
-    });
-}
-
-//Gets the incomplete URL and pushes it to a seperate array
-function getMeetURL(callback) {
-    got(raceURL).then(response => {
-        const $ = cheerio.load(response.body);
-        //Get the meet links and push to a seperate array
-        $('.meet a').each((i, link,) => {
-            var href = link.attribs.href;
-            var url = "https://va.milesplit.com" + href;
-            meetURLS.push(url);
-        });
         callback();
     }).catch(err => {
         console.log(err);
@@ -155,24 +149,9 @@ function getRacePlacement(callback) {
     });
 }
 
-//Adds the name of the meet a student ran in
-function getMeetName() {
-    for (i in meetURLS) {
-        got(meetURLS[i]).then(response => {
-            const $ = cheerio.load(response.body);
-            let text = $('.meetName').text().trim();
-            meetNames.push(text);
-            exportToJSON("json-output/meetNames.json", meetNames);
-        }).catch(err => {
-            console.log(err);
-        });
-    }
-}
-
 //Changes the URL of the meet to a readable one
-function changeURL() {
-    for (i = 0; i < meetURLS.length; i++) {
-        got(meetURLS[i]).then(response => {
+function changeURL(URL, position) {
+        got(URL).then(response => {
             const $ = cheerio.load(response.body);
             let good_url = "";
             if (response.body.search('class="meetResultsList"') > -1) {
@@ -183,12 +162,11 @@ function changeURL() {
                 good_url = $('#ddResultsView').find('option').attr('value');
                 good_url = good_url.replace('formatted', 'raw');
             }
-            goodMeetURLS.push(good_url);
+            goodMeetURLS.push({good_url, position});
             exportToJSON("json-output/goodMeetURLs.json", goodMeetURLS);
         }).catch(err => {
             console.log(err);
         });
-    }
 }
 
 function exportToJSON(location, array) {
@@ -203,17 +181,13 @@ function printTable() {
     //Runs third
     getRacePlacement(() => {
         //Runs second
-        getMeetURL(() => {
-            //Runs first   
-            changeURL();
-            getMeetName();
-            getOverallRankAndFillBlank(() => {
-                //Runs last
-                exportToJSON("json-output/basic.json", times);
-                exportToJSON("json-output/racePlacements.json", racePlacements);
-                exportToJSON("json-output/genderAndEvent.json", genderAndEvent);
-                console.table(times);
-            });
+        getOverallRankAndFillBlank(() => {
+            //Runs last
+            console.table(times);
+            exportToJSON("json-output/basic.json", times);
+            exportToJSON("json-output/racePlacements.json", racePlacements);
+            exportToJSON("json-output/genderAndEvent.json", genderAndEvent);
         });
     });
+
 }
