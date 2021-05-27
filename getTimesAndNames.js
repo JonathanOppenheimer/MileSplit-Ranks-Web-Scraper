@@ -25,21 +25,10 @@ let goodMeetURLS = meetURLS.map(function (item) {
 //-------------------------------------------//
 
 formatArays();
-printTables();
+fillNamesAndTimes();
 
 //Main work done below
 //-------------------------------------------//
-
-function printTables() {
-    //Runs first
-    fillNamesAndTimes(() => {
-        //Runs last
-        //doesn't run for some reason (?) -- need to fix
-        console.table(goodMeetURLS);
-        console.table(racePlacements);
-        console.table(finalTimesArray);
-    });
-}
 
 function formatArays() {
     //Formats finalTimesArray 
@@ -62,11 +51,21 @@ function sortBySecondColumn(column1, column2) {
 
 function fillNamesAndTimes() {
     let counter = 0;
+    let totalCount = ((meetURLS.length-1) * (meetURLS.length)) / 2;
+    let runningITotal = 0;
+    console.log(totalCount);
+
     for (let i = 0; i < meetURLS.length; i++) {
         counter++;
         getNamesAndTimes(goodMeetURLS[i][0], racePlacements[i], counter, function () {
             //console.log(i + " Done");
+            if(runningITotal == totalCount)
+            {
+               // console.table(finalTimesArray);
+            }
         });
+        runningITotal = runningITotal + i;
+        console.log(runningITotal);
     }
 }
 
@@ -110,7 +109,7 @@ function getNamesAndTimes(meetURL, racePlacement, position, callback) {
                 text = text.trim();
                 text = text.replace(/ +(?= )/g, '');
                 text = text.split(' ');
-                
+
                 let tempArray = text;
                 name = text[1] + ' ' + text[2];
                 //If the name has undefined in it, just make it Unknown -- can look into later
@@ -139,8 +138,9 @@ function getNamesAndTimes(meetURL, racePlacement, position, callback) {
             }
             finalTimesArray[position][1] = name;
             finalTimesArray[position][3] = time;
-            console.table(finalTimesArray);
             callback();
+            return position; 
+           
         });
     });
 }
