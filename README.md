@@ -1,12 +1,11 @@
 # MileSplit-Ranks-Web-Scraper
 A lightweight node.js web scraper to acquire, and then format the ranked list of runners for events listed in MileSplit. 
 
-**Currently in-progress**
-
 ## Table of Contents 
 - [MileSplit-Ranks-Web-Scraper](#milesplit-ranks-web-scraper)
 - [Explanation of Function](#explanation-of-function)
 - [Installation and Use](#installation-and-use)
+- [Sample Output](#sample-output)
 
 ## Explanation of Function 
 If you've ever run XC or T&F at a non-professional level, your results were probably posted to [MileSplit](https://www.milesplit.com/), the "premier network for track & field and cross country." Essentially, they host all the results of various races and meets throughout the United States and publish them in a navigable format with specific meet results, results by athlete, results by event, and so on, available. Unfortunately, a good deal of use of MileSplit requires a paid subscription to MileSplit. 
@@ -22,5 +21,10 @@ This scraper aims to provide a similarily readable ranked list of athletes by ge
 3. `cd` into the downloaded/extracted folder 
 4. Run `npm install` 
 5. [Edit the URL](https://github.com/TheBlueness/MileSplit-Ranks-Web-Scraper/blob/8736c4c85ee81c3b3b6c18ff3a284a61643240d7/gatherBasicInfo.js#L3-L6) of the rank list you'd like to scrape and gain access to 
-6. Run `node gatherBasicInfo.js`
-7. [output not ready yet]
+6. Run `node gatherBasicInfo.js` followed by `node getTimesAndNames.js`
+7. The times are now viewable. Open `output/output.html`in your preferred web browser. 
+
+To save your results, copy the contents of the output folder to an external destination (e.g. your documents file). Running the program again with a different rank list URL will overwrite the existing output. 
+
+## Sample Output 
+![having to pay image](readme/sample-output.png)
