@@ -27,4 +27,4 @@ This scraper aims to provide a similarily readable ranked list of athletes by ge
 To save your results, copy the contents of the output folder to an external destination (e.g. your documents file). Running the program again with a different rank list URL will overwrite the existing output. 
 
 ## Sample Output 
-![having to pay image](readme/sample-output.png)
+![sample image](readme/sample-output.png)
