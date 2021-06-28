@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const got = require('got');
+const fs = require('fs');
 const basic = require('./json-output/basic.json');
 const meetURLS = require('./json-output/goodMeetURLs.json');
 const racePlacements = require('./json-output/racePlacements.json');
@@ -12,26 +13,24 @@ let finalTimesArray = [
 let gender = genderAndEvent[0];
 let event = genderAndEvent[1];
 
-//turns JSON files into array
-let basicArray = basic.map(function (item) {
-    return Object.values(item);
-});
-
+//turns JSON file into array
 let goodMeetURLS = meetURLS.map(function (item) {
     return Object.values(item);
 });
+
+let htmlContent = '';
 
 //Run functions area
 //-------------------------------------------//
 
 formatArays();
-fillNamesAndTimes();
+exportToHTML();
 
 //Main work done below
 //-------------------------------------------//
 
+//Formats finalTimesArray 
 function formatArays() {
-    //Formats finalTimesArray 
     finalTimesArray = basic;
     finalTimesArray[0][1] = "Name";
     finalTimesArray[0][3] = "Time";
@@ -49,49 +48,34 @@ function sortBySecondColumn(column1, column2) {
     }
 }
 
+//Exports work to an HTML table for viewing
+async function exportToHTML() {
+    await fillNamesAndTimes();
+    console.table(finalTimesArray);
+    htmlContent = htmlContent + makeTableHTML(finalTimesArray);
+    fs.writeFileSync('output/output.html', htmlContent, (error) => { console.log(error) });
+}
+
+//All functions below help fill the JS table (finalTimesArray)
+
 function fillNamesAndTimes() {
-    let counter = 0;
-    let totalCount = ((meetURLS.length-1) * (meetURLS.length)) / 2;
-    let runningITotal = 0;
-    console.log(totalCount);
+    return new Promise((resolve, reject) => {
+        let counter = 0;
 
-    for (let i = 0; i < meetURLS.length; i++) {
-        counter++;
-        getNamesAndTimes(goodMeetURLS[i][0], racePlacements[i], counter, function () {
-            //console.log(i + " Done");
-            if(runningITotal == totalCount)
-            {
-               // console.table(finalTimesArray);
-            }
-        });
-        runningITotal = runningITotal + i;
-        console.log(runningITotal);
-    }
+        for (let i = 0; i < meetURLS.length; i++) {
+            counter++;
+            getNamesAndTimes(goodMeetURLS[i][0], racePlacements[i], counter);
+        }
+
+        setTimeout(() => {
+            resolve();
+            ;
+        }, 5000
+        );
+    });
 }
 
-//Function to see if the time is valid 
-function validTime(time) {
-    //Checks if it's a string or under 9 seconds (the under 9 seconds needs to be adjusted because sometimes a time could actually be under 9 seconds if it's 55m or something) 
-    if (isNaN(parseInt(time)) == true || parseInt(time) < 9) {
-        //Sometimes the time is still valid if only the first character is a string see
-        //https://en.wikipedia.org/wiki/Athletics_abbreviations#Records
-        //Longer term need to check more than just the first character 
-        if ((/[a-zA-Z]/).test(time.charAt(0)) && time.length > 1) {
-            let testAgain = time.slice(1);
-            if (validTime(testAgain) == true) {
-                return true;
-            }
-        }
-        else {
-            return false;
-        }
-    }
-    else {
-        return true;
-    }
-}
-
-function getNamesAndTimes(meetURL, racePlacement, position, callback) {
+async function getNamesAndTimes(meetURL, racePlacement, position) {
     got(meetURL).then(response => {
         let name = '';
         let time = '';
@@ -138,9 +122,52 @@ function getNamesAndTimes(meetURL, racePlacement, position, callback) {
             }
             finalTimesArray[position][1] = name;
             finalTimesArray[position][3] = time;
-            callback();
-            return position; 
-           
+            //console.table(finalTimesArray);
+            return position;
         });
     });
+    return;
+}
+
+//Function to see if the time is valid 
+function validTime(time) {
+    //Checks if it's a string or under 9 seconds (the under 9 seconds needs to be adjusted because sometimes a time could actually be under 9 seconds if it's 55m or something) 
+    if (isNaN(parseInt(time)) == true || parseInt(time) < 9) {
+        //Sometimes the time is still valid if only the first character is a string see
+        //https://en.wikipedia.org/wiki/Athletics_abbreviations#Records
+        //Longer term need to check more than just the first character 
+        if ((/[a-zA-Z]/).test(time.charAt(0)) && time.length > 1) {
+            let testAgain = time.slice(1);
+            if (validTime(testAgain) == true) {
+                return true;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        return true;
+    }
+}
+
+function makeTableHTML(myArray) {
+    var result = " <head> <link rel='stylesheet' href='style.css'> </head> <table border=1 id='times'>";
+    for (var i = 0; i < myArray.length; i++) {
+        result += "<tr>";
+        for (var j = 0; j < myArray[i].length; j++) {
+            if (i == 0 && j < 5) {
+                result += "<th>" + myArray[i][j] + "</th>";
+            }
+            else {
+                result += "<td>" + myArray[i][j] + "</td>";
+            }
+
+        }
+        result += "</tr>";
+    }
+    result += "</table>";
+
+    result += ""
+    return result;
 }
